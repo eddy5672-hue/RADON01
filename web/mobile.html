@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#030a1c">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg">
+<title>라돈 안심 AI · 작업자 앱</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+<style>
+  body { max-width: 520px; margin: 0 auto; padding-bottom: 84px; }
+  .m-top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    background: rgba(3, 9, 24, .85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .m-top .t { margin-left: auto; font-family: var(--disp); font-size: 12px; color: var(--cyan); }
+  .m-sec { margin: 12px; }
+  .m-twin { height: 230px; }
+  .m-site { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .m-site b { font-size: 16px; } .m-site span { font-size: 12px; color: var(--muted); }
+  .gauge { width: 250px; height: 250px; margin: 0 auto; }
+  .gauge .val { font-size: 56px; }
+  .fc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .fc-grid div { padding: 8px 4px; border-radius: 12px; background: rgba(5, 15, 40, .55); border: 1px solid var(--line); text-align: center; font-size: 11px; color: var(--muted); }
+  .fc-grid b { display: block; font-family: var(--disp); font-size: 18px; margin-top: 2px; }
+  .mrow { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .mrow:last-child { border-bottom: none; } .mrow span:first-child { color: var(--sub); }
+  .mchart { height: 220px; position: relative; } .mchart canvas { width: 100%; height: 100%; }
+  nav.tabs { position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto; display: flex; z-index: 30;
+    background: rgba(3, 9, 24, .92); backdrop-filter: blur(14px); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  nav.tabs button { flex: 1; border: none; background: none; padding: 10px 0 12px; font-size: 12px; color: var(--muted); cursor: pointer; position: relative; }
+  nav.tabs button.on { color: var(--cyan); font-weight: 700; text-shadow: 0 0 10px var(--cyan); }
+  nav.tabs .dot { position: absolute; top: 6px; left: 58%; background: var(--danger); color: #fff; border-radius: 9px; font-size: 10px; padding: 0 5px; }
+  .tab { display: none; } .tab.on { display: block; }
+  .bigbtn { width: 100%; padding: 13px; border-radius: 12px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff;
+    background: linear-gradient(135deg, #1b8cff, #6a4dff); box-shadow: 0 8px 26px rgba(61, 139, 255, .45); }
+  .bigbtn.sec { background: rgba(20, 50, 110, .55); border: 1px solid var(--line2); box-shadow: none; }
+  .bigbtn.hot { background: linear-gradient(135deg, #ff5a3d, #ff2d6a); box-shadow: 0 8px 26px rgba(255, 61, 104, .4); }
+  .panel { padding: 16px; }
+  .ph .no { font-size: 26px; }
+</style>
+</head>
+<body>
+<div class="bg-stars"></div><div class="bg-rails"></div>
+<div class="m-top">
+  <div class="brand-mark" style="width:32px;height:32px;border-radius:10px"><img src="/icon.svg" style="width:20px;height:20px" alt=""></div>
+  <b style="font-size:16px">라돈 안심 AI</b>
+  <span class="t" id="mTime">-</span>
+</div>
+
+<section class="tab on" id="tab-home">
+  <div class="m-sec panel">
+    <div class="m-site"><b>A역 배수펌프실</b><span id="mWx">-</span></div>
+    <div class="twin m-twin"><canvas id="twin"></canvas><div class="hud bl">라돈 입자 = 실시간 농도</div></div>
+  </div>
+  <div class="m-sec panel">
+    <div class="gauge" id="gauge"><div class="center"><div class="val num" id="mNow">-</div><div class="unit">Bq/㎥ · 10분 평균</div><div class="lv" id="mLv">-</div></div></div>
+    <div class="gate wait" id="gate"><div class="ic">⏳</div><div><b id="gateT">-</b><span id="gateS">-</span></div></div>
+    <div class="row-form" style="justify-content:center;margin-top:10px;gap:16px"><span id="mTemp" class="help" style="margin:0">-</span><span id="mFan">-</span></div>
+  </div>
+  <div class="m-sec panel">
+    <div class="ph"><span class="no">AI</span><span class="tt"><small>PREDICTIVE FORECAST</small><b>선제 예측 (환기 계획 반영)</b></span></div>
+    <div class="fc-grid" id="fcGrid"></div>
+  </div>
+  <div class="m-sec panel">
+    <div class="ph"><span class="no">IN</span><span class="tt"><small>SMART ENTRY</small><b>출입 일정 · 자동 환기</b></span></div>
+    <div id="mEntry" class="mrow">-</div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="bigbtn hot" data-quick="30">🚶 30분 후 진입 등록</button>
+      <button class="bigbtn sec" data-quick="60" style="flex:0 0 34%">1시간 후</button>
+    </div>
+    <div class="help">등록하면 진입 시각에 맞춰 AI가 초기환기를 시작하고, 완료 시 '진입 가능' 알림을 보냅니다.</div>
+  </div>
+</section>
+
+<section class="tab" id="tab-ai">
+  <div class="m-sec panel">
+    <div class="ph"><span class="no">03</span><span class="tt"><small>AI FORECAST</small><b>라돈 추이 · 2시간 예측</b></span></div>
+    <div class="mchart"><canvas id="mChart"></canvas></div>
+    <div class="legend"><span><i style="border-color:#eaf6ff"></i>측정</span><span><i class="dash" style="border-color:#22e3ff"></i>제어 반영</span><span><i class="dash" style="border-color:#ff3d68"></i>무환기</span></div>
+  </div>
+  <div class="m-sec panel">
+    <div class="ph"><span class="no">05</span><span class="tt"><small>VENTILATION</small><b>환기 운영 현황 (24h)</b></span></div>
+    <div id="mStats"></div>
+  </div>
+  <div class="m-sec panel">
+    <div class="ph"><span class="no">06</span><span class="tt"><small>GENERATIVE AI</small><b>작업 전 안전 브리핑</b></span></div>
+    <button class="bigbtn" id="mBrief">✨ 브리핑 받기</button>
+    <div class="ai-out" id="mBriefOut" style="margin-top:10px;min-height:90px">-</div>
+    <div class="ai-meta" id="mBriefMeta"></div>
+  </div>
+</section>
+
+<section class="tab" id="tab-alert">
+  <div class="m-sec panel">
+    <div class="ph"><span class="no">07</span><span class="tt"><small>NOTIFICATIONS</small><b>알림</b></span><span class="right"><button class="btn sm" id="notiBtn">휴대폰 알림 켜기</button></span></div>
+    <div class="events" id="mEvents" style="max-height:none"></div>
+  </div>
+</section>
+
+<nav class="tabs">
+  <button class="on" data-tab="home">🛡<br>안심 대시보드</button>
+  <button data-tab="ai">📈<br>AI 선제 예측</button>
+  <button data-tab="alert">🔔<br>알림<span class="dot" id="dot" style="display:none">0</span></button>
+</nav>
+<script src="/static/common.js"></script>
+<script src="/static/twin3d.js"></script>
+<script src="/static/mobile.js"></script>
+</body>
+</html>

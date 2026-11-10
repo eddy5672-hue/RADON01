@@ -1,0 +1,9 @@
+{
+  "name": "라돈 안심 AI",
+  "short_name": "라돈안심",
+  "start_url": "/mobile",
+  "display": "standalone",
+  "background_color": "#eef1f5",
+  "theme_color": "#0d2a4a",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

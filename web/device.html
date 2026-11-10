@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>라돈 안심 AI · 가상 측정 단말기</title>
+<link rel="icon" href="/icon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+<style>
+  .wrap { max-width: 760px; }
+  .ttl { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .ttl h1 { font-size: 20px; } .ttl span { color: var(--sub); font-size: 13px; }
+  .devs { display: grid; grid-template-columns: 1fr; gap: 18px; }
+  .dev { border-radius: 22px; padding: 18px; background: linear-gradient(160deg, #1a2a48, #0b1630); border: 1px solid var(--line2);
+    box-shadow: 0 30px 80px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12), 0 0 40px rgba(34,227,255,.15); }
+  .dev .hd { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); font-weight: 700; margin-bottom: 10px; font-family: var(--disp); letter-spacing: 1.5px; }
+  .lcd { background: #04140d; color: #6dff9e; border-radius: 12px; padding: 16px 18px; font-family: var(--disp); box-shadow: inset 0 0 22px rgba(0,0,0,.8), 0 0 24px rgba(109,255,158,.12); border: 1px solid rgba(109,255,158,.25); }
+  .lcd .top { display: flex; justify-content: space-between; font-size: 12px; opacity: .85; }
+  .lcd .rn { font-size: 64px; font-weight: 800; text-align: right; margin-top: 6px; text-shadow: 0 0 18px currentColor; }
+  .lcd .rn small { font-size: 16px; }
+  .lcd .row { display: flex; justify-content: space-between; font-size: 15px; margin-top: 6px; }
+  .lcd.alarm { color: #ff8aa0; background: #1a0509; border-color: rgba(255,61,104,.4); }
+  .lcd.warn { color: #ffd84a; background: #171204; border-color: rgba(255,216,74,.35); }
+  .leds { display: flex; gap: 18px; margin: 14px 4px; font-size: 12px; color: var(--sub); font-family: var(--disp); }
+  .led { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: #2a3a55; margin-right: 6px; vertical-align: -1px; }
+  .led.g { background: #2ef5a5; box-shadow: 0 0 10px #2ef5a5; } .led.b { background: #36b9ff; box-shadow: 0 0 10px #36b9ff; } .led.r { background: #ff3d68; box-shadow: 0 0 10px #ff3d68; }
+  .keys { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .keys button { border: 1px solid var(--line2); background: linear-gradient(180deg, rgba(40,80,150,.6), rgba(15,35,80,.6)); border-radius: 10px; padding: 10px 4px; font-size: 13px; cursor: pointer; color: var(--text); transition: .2s; }
+  .keys button:hover { border-color: var(--cyan); box-shadow: 0 0 14px rgba(34,227,255,.35); }
+  .pkt { margin-top: 12px; background: rgba(2,8,20,.85); color: #9fd2ff; font-size: 11.5px; border-radius: 10px; padding: 10px; white-space: pre-wrap; word-break: break-all; min-height: 52px; border: 1px solid var(--line); font-family: Consolas, monospace; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 14px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="bg-stars"></div><div class="bg-rails"></div>
+<div class="wrap">
+  <div class="ttl"><div class="brand-mark"><img src="/icon.svg" alt=""></div><h1>가상 라돈 측정·제어 단말기</h1>
+    <span>라돈·온습도 센서 + 환기팬 릴레이 + LTE 모뎀 시뮬레이터 · <b id="dTime" class="mono">-</b></span>
+    <span class="spacer" style="flex:1"></span><a class="tbtn" href="/">← 관제 모니터링</a></div>
+  <div class="devs" id="devs"></div>
+  <div class="note">
+    · 단말기는 1분마다 센서값을 측정하여 LTE(공개등급 수치 데이터)로 관제 서버에 전송하며, 아래 패킷은 전송되는 데이터 형식입니다.<br>
+    · [현장 수동] 버튼은 현장 작업자의 물리 버튼을 모사합니다(수동 모드 전환). [자동 복귀]를 누르면 AI 자동 제어로 돌아갑니다.<br>
+    · [유입 급증]·[통신 두절]은 시연용 고장·이벤트 주입 기능입니다. 센서 이상 시 단말기는 안전측(Fail-safe)으로 환기팬을 연속 가동합니다.
+  </div>
+</div>
+<script src="/static/common.js"></script>
+<script>
+const DEV_ID = { 'pump-a': 'RG-A01', 'pump-b': 'RG-B01', 'mech-c': 'RG-C01' };
+let built = false;
+function build(st) {
+  $('#devs').innerHTML = st.sites.map((s) => `
+  <div class="dev" id="d-${s.id}">
+    <div class="hd"><span>RADON-GUARD ${DEV_ID[s.id] || s.id}</span><span>${esc(s.name)}</span></div>
+    <div class="lcd"><div class="top"><span class="clk">-</span><span class="lte">LTE ▂▄▆█</span></div>
+      <div class="rn">- <small>Bq/㎥</small></div>
+      <div class="row"><span class="th">- ℃ / - %</span><span class="lv">-</span></div>
+      <div class="row"><span class="fn">FAN -</span><span class="md">-</span></div></div>
+    <div class="leds"><span><i class="led pw g"></i>PWR</span><span><i class="led tx"></i>TX</span><span><i class="led fanl"></i>FAN</span><span><i class="led al"></i>ALARM</span></div>
+    <div class="keys">
+      <button data-act="on" data-s="${s.id}">현장 수동 ON</button><button data-act="off" data-s="${s.id}">현장 수동 OFF</button><button data-act="auto" data-s="${s.id}">자동 복귀</button>
+      <button data-act="surge" data-s="${s.id}">💧 유입 급증</button><button data-act="fault" data-s="${s.id}">⚠ 통신 두절</button><button data-act="entry" data-s="${s.id}">🚶 30분 후 진입</button>
+    </div>
+    <div class="pkt mono">-</div>
+  </div>`).join('');
+  built = true;
+}
+async function tick() {
+  const st = await API.get('/api/state');
+  if (!built) build(st);
+  $('#dTime').textContent = st.sim_time;
+  for (const s of st.sites) {
+    const el = $('#d-' + s.id); if (!el) continue;
+    const c = s.current, lv = s.level;
+    const lcd = el.querySelector('.lcd');
+    lcd.className = 'lcd' + (s.sensor_fault || lv.code === 'danger' ? ' alarm' : lv.code === 'caution' ? ' warn' : '');
+    el.querySelector('.clk').textContent = st.sim_time.slice(5);
+    el.querySelector('.lte').textContent = s.sensor_fault ? 'LTE  ✕ NO SIGNAL' : 'LTE ▂▄▆█';
+    el.querySelector('.rn').innerHTML = (s.sensor_fault ? 'Err-02' : fmt0(c.radon_raw)) + ' <small>Bq/㎥</small>';
+    el.querySelector('.th').textContent = `${c.temp} ℃ / ${c.rh} %`;
+    el.querySelector('.lv').textContent = s.sensor_fault ? 'SENSOR FAIL' : lv.label + ' (' + lv.code.toUpperCase() + ')';
+    el.querySelector('.fn').textContent = 'FAN ' + (s.fan ? 'ON ◉' : 'OFF ○');
+    el.querySelector('.md').textContent = s.mode === 'AUTO' ? 'AI-AUTO' : s.mode;
+    el.querySelector('.fanl').className = 'led fanl' + (s.fan ? ' b' : '');
+    el.querySelector('.al').className = 'led al' + (s.sensor_fault || ['caution', 'danger'].includes(lv.code) ? ' r' : '');
+    const tx = el.querySelector('.tx'); tx.className = 'led tx' + (s.sensor_fault ? '' : ' g'); setTimeout(() => (tx.className = 'led tx'), 250);
+    el.querySelector('.pkt').textContent = s.sensor_fault ? '[TX] 전송 실패 — 재시도 대기' :
+      'TX → ' + JSON.stringify({ dev: DEV_ID[s.id], ts: st.sim_time, rn: c.radon_raw, t: c.temp, rh: c.rh, fan: s.fan ? 1 : 0, mode: s.mode });
+  }
+}
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const s = b.dataset.s, a = b.dataset.act;
+  if (a === 'on' || a === 'off') await API.post('/api/fan', { site: s, on: a === 'on', source: '현장 단말기' });
+  if (a === 'auto') await API.post('/api/mode', { site: s, mode: 'AUTO' });
+  if (a === 'surge' || a === 'fault') await API.post('/api/sim', { event: a, site: s });
+  if (a === 'entry') await API.post('/api/entries', { site: s, quick_minutes: 30, duration: 60, label: '현장 출입' });
+  toast('단말기 조작: ' + b.textContent);
+  tick();
+});
+tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>

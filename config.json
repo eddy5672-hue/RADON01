@@ -1,0 +1,10 @@
+{
+  "allow_remote_control": true,
+  "llm": {
+    "provider": "none",
+    "base_url": "http://localhost:11434/v1",
+    "model": "",
+    "api_key": "",
+    "timeout": 90
+  }
+}

@@ -1,0 +1,22 @@
+# Render Blueprint — GitHub 저장소 연결 시 자동 배포 (https://render.com/docs/blueprint-spec)
+services:
+  - type: web
+    name: radon-ai
+    runtime: python
+    plan: free                 # 상시 가동이 필요하면 starter로 변경
+    region: singapore          # 한국과 가장 가까운 리전
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run.py --no-browser
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DATA_GO_KR_KEY      # 공공데이터포털 일반 인증키 (기상청 ASOS 시간자료·단기예보)
+        sync: false
+      - key: GROQ_API_KEY        # Groq API 키 (배포 시 입력)
+        sync: false
+      - key: LLM_DEFAULT_MODEL
+        value: groq:openai/gpt-oss-120b
+      - key: ALLOW_REMOTE_CONTROL
+        value: "true"

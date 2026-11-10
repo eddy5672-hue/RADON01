@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>라돈 안심 AI · 디지털 트윈 관제</title>
+<link rel="icon" href="/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="bg-stars"></div><div class="bg-rails"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark"><img src="/icon.svg" alt=""></div>
+    <div><b>라돈 안심 AI</b><small>PREDICTIVE RADON SAFETY · DIGITAL TWIN</small></div>
+  </div>
+  <span class="chip">🕒 <b id="simTime" class="mono">-</b></span>
+  <span class="chip" id="modeChip">-</span>
+  <span class="chip" id="wx" title="기상 출처">기상 -</span>
+  <span class="spacer"></span>
+  <select id="speed" title="배속">
+    <option value="1">● 실시간 1×</option><option value="60">▶ ×60 (1초=1분)</option>
+    <option value="300">▶▶ ×300 (1초=5분)</option><option value="900">▶▶▶ ×900</option>
+  </select>
+  <button class="tbtn" id="pauseBtn">일시정지</button>
+  <button class="tbtn" id="liveBtn" title="기상청 실시간 기상·현재 시각으로 초기화">⟲ 실시간 복귀</button>
+  <button class="tbtn" id="scnBtn" title="합성 기상으로 가속 시연">시나리오</button>
+  <a class="tbtn" href="/mobile" target="_blank" title="작업자 모바일 앱">📱</a>
+  <a class="tbtn" href="/device" target="_blank" title="가상 측정 단말기">📟</a>
+</header>
+
+<main class="wrap">
+  <details class="panel guide" id="guide">
+    <summary class="ph" style="margin:0"><span class="no">00</span><span class="tt"><small>DEMO GUIDE</small><b>시연 가이드 <span style="font-weight:400;color:var(--muted);font-size:13px">— 펼쳐서 순서대로 체험해 보세요</span></b></span></summary>
+    <ol>
+      <li><b>디지털 트윈</b>: A역 배수펌프실을 3D로 재현했습니다. 드래그로 회전·휠로 확대하며 집수정에서 방출되는 라돈 입자(농도 비례)와 환기 기류를 확인합니다.</li>
+      <li><b>선제환기</b>: [30분 후 진입] → 배속 ×60. AI가 진입 시점 농도를 예측해 초기환기를 시작하고 100 Bq/㎥ 이하가 되면 '진입 가능' 알림을 보냅니다.</li>
+      <li><b>기상 영향</b>: [저기압 통과]·[집중호우] → 빨간 점선(무환기 예측) 상승, 위험 단계가 예측되면 AI 선제환기 동작.</li>
+      <li><b>생성형 AI</b>: 모델을 골라 안전 브리핑·운영 일지 생성, [모델 비교]로 두 모델 결과를 나란히 확인.</li>
+      <li><b>모바일·단말기</b>: 상단 링크. 모든 조작은 접속자별로 분리되며 [실시간 복귀]로 초기화됩니다.</li>
+    </ol>
+  </details>
+
+  <section class="flow" id="flow">
+    <div class="step" data-step="data"><div class="ico">🛰</div><div class="k">STEP 01 · DATA</div><div class="t">실시간 데이터 수집</div><div class="v" id="fs1">-</div></div>
+    <div class="step" data-step="ai"><div class="ico">🧠</div><div class="k">STEP 02 · AI PREDICT</div><div class="t">AI 2시간 선제 예측</div><div class="v" id="fs2">-</div></div>
+    <div class="step" data-step="vent"><div class="ico">🌀</div><div class="k">STEP 03 · AUTO CONTROL</div><div class="t">선제 환기 자동 제어</div><div class="v" id="fs3">-</div></div>
+    <div class="step" data-step="gen"><div class="ico">✨</div><div class="k">STEP 04 · GENERATIVE AI</div><div class="t">작업자 안전 브리핑</div><div class="v" id="fs4">-</div></div>
+  </section>
+
+  <div class="row r-hero">
+    <section class="panel">
+      <div class="ph"><span class="no">01</span><span class="tt"><small>3D DIGITAL TWIN</small><b id="siteTitle">A역 배수펌프실 디지털 트윈</b></span>
+        <span class="right legend3d"><span><i style="background:#2ef5a5"></i>안전</span><span><i style="background:#ffd84a"></i>관심</span><span><i style="background:#ff8f3f"></i>주의</span><span><i style="background:#ff3d68"></i>위험</span></span></div>
+      <div class="twin">
+        <canvas id="twin"></canvas>
+        <div class="hud tl"><span class="tag">LIVE · RG-A01</span><br><span id="hudDesc">지하 4층 · 집수정 인접 · 밀폐공간 80㎥</span></div>
+        <div class="hud tr"><span class="tag" id="hudMode">AI-AUTO</span><br><span id="hudReason">-</span></div>
+        <div class="hud bl">라돈 입자 = 실시간 농도 비례 · 드래그 회전 / 휠 확대</div>
+        <div class="hud br" id="hudWx">-</div>
+      </div>
+      <div class="row-form" style="margin-top:12px">
+        <span class="help" style="margin:0">시나리오</span>
+        <button class="btn sm" data-ev="rain">🌧 집중호우</button>
+        <button class="btn sm" data-ev="lowpressure">🌀 저기압 통과</button>
+        <button class="btn sm" data-ev="surge">💧 집수정 유입 급증</button>
+        <button class="btn sm" data-ev="fault">⚠ 센서 통신두절/복구</button>
+        <span class="spacer"></span>
+        <button class="btn hot sm" data-quick="30">🚶 30분 후 진입</button>
+        <button class="btn sm" data-quick="60">1시간 후 진입</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="ph"><span class="no">02</span><span class="tt"><small>LIVE RADON LEVEL</small><b>실시간 라돈 농도</b></span><span class="right" id="envLine">-</span></div>
+      <div class="gauge-box">
+        <div class="gauge" id="gauge">
+          <div class="center"><div class="val num" id="gVal">-</div><div class="unit">Bq/㎥ · 10분 평균</div><div class="lv" id="gLv">-</div></div>
+        </div>
+        <div class="gate wait" id="gate"><div class="ic">⏳</div><div><b id="gateT">-</b><span id="gateS">-</span></div></div>
+        <div class="minis">
+          <div class="mini"><div class="k">AI 예측 · 1시간 후</div><div class="v" id="m60">-</div><div class="s" id="m60s">-</div></div>
+          <div class="mini"><div class="k">AI 예측 · 2시간 후</div><div class="v" id="m120">-</div><div class="s" id="m120s">-</div></div>
+          <div class="mini"><div class="k">환기팬</div><div class="v" id="mFan">-</div><div class="s" id="mFanS">-</div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="row r-2">
+    <section class="panel">
+      <div class="ph"><span class="no">03</span><span class="tt"><small>AI FORECAST · 10MIN × 12</small><b>라돈 농도 추이 및 AI 2시간 예측</b></span>
+        <span class="right"><span class="seg" id="rangeSeg"><button data-h="6">6H</button><button data-h="12" class="on">12H</button><button data-h="24">24H</button><button data-h="48">48H</button></span></span></div>
+      <div class="chart-wrap"><canvas id="chart"></canvas><div class="tooltip" id="tip"></div></div>
+      <div class="legend">
+        <span><i style="border-color:#eaf6ff"></i>측정값(10분 평균)</span>
+        <span><i class="dash" style="border-color:#22e3ff"></i>AI 예측 · 제어 반영</span>
+        <span><i class="dash" style="border-color:#ff3d68"></i>AI 예측 · 환기 안 할 경우</span>
+        <span><i class="box" style="background:#36b9ff"></i>환기팬 가동(실적/계획)</span>
+        <span><i class="box" style="background:rgba(255,216,74,.5)"></i>작업자 출입</span>
+      </div>
+      <div class="reason" id="reason">-</div>
+      <div class="help" id="modelInfo">-</div>
+    </section>
+
+    <section class="panel">
+      <div class="ph"><span class="no">04</span><span class="tt"><small>KMA LIVE WEATHER</small><b>기상청 실시간 연동</b></span><span class="right" id="wxSrc">-</span></div>
+      <div class="wx-grid">
+        <div>해면기압<b id="wP">-</b></div><div>3시간 변화<b id="wP3">-</b></div>
+        <div>현재 강수<b id="wR">-</b></div><div>6시간 강수예보<b id="wR6">-</b></div>
+      </div>
+      <canvas id="pSpark"></canvas>
+      <div class="wx-next" id="wxNext"></div>
+      <div class="wx-meta" id="wxMeta">-</div>
+    </section>
+  </div>
+
+  <div class="row r-3">
+    <section class="panel">
+      <div class="ph"><span class="no">05</span><span class="tt"><small>SMART VENTILATION</small><b>선제 환기 제어 · 출입 연동</b></span></div>
+      <div class="row-form">
+        <span class="seg" id="modeSeg"><button data-m="AUTO">AI 자동</button><button data-m="LEGACY">기존 방식</button><button data-m="MANUAL">수동</button></span>
+        <button class="btn sm" id="fanOn">팬 ON</button><button class="btn sm" id="fanOff">팬 OFF</button>
+      </div>
+      <div class="help" id="modeHelp"></div>
+      <div class="stat">
+        <div><div class="k">가동시간(24h)</div><div class="v" id="sRun">-</div><div class="bar"><i id="sRunBar" style="width:0"></i></div></div>
+        <div><div class="k">전력 절감</div><div class="v c-safe" id="sSave">-</div><div class="bar"><i id="sSaveBar" style="width:0"></i></div></div>
+        <div><div class="k">출입 평균/최고</div><div class="v" id="sEntry">-</div></div>
+      </div>
+      <table class="list" style="margin-top:14px"><thead><tr><th>출입 일정</th><th>시간</th><th>반복</th><th></th></tr></thead><tbody id="entryBody"></tbody></table>
+      <div class="row-form" style="margin-top:10px">
+        <input type="text" id="enLabel" placeholder="작업명" style="width:110px">
+        <input type="time" id="enStart" value="10:00"> ~ <input type="time" id="enEnd" value="11:00">
+        <label class="ck"><input type="checkbox" id="enDaily" checked>매일</label>
+        <button class="btn primary sm" id="enAdd">등록</button>
+      </div>
+      <div class="row-form" style="margin-top:10px">
+        <label class="ck"><input type="checkbox" id="remoteCk" checked>관제 원격제어 허용</label>
+        <a class="btn sm" id="csvBtn" href="#">CSV 내려받기</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="ph"><span class="no">06</span><span class="tt"><small>GENERATIVE AI</small><b>생성형 AI 안전 비서</b></span><span class="right" id="llmName">-</span></div>
+      <select id="llmModel" style="width:100%;margin-bottom:10px"></select>
+      <div class="row-form" style="margin-bottom:10px">
+        <button class="btn primary" id="aiBrief">✨ 작업 전 안전 브리핑</button>
+        <button class="btn" id="aiReport">일일 운영 일지</button>
+        <button class="btn" id="aiCompare">⚖ 모델 비교</button>
+        <button class="btn sm" id="aiCopy">복사</button>
+      </div>
+      <div class="ai-out" id="aiOut">버튼을 누르면 현재 측정·예측·기상 데이터를 근거로 문서를 작성합니다.</div>
+      <div class="ai-meta" id="aiMeta"></div>
+      <div id="cmpBox" class="cmp" style="display:none"></div>
+      <div class="help">OpenAI 호환 API 모델 비종속 구조 · 진입 판단은 규칙 기반 확정 · 장애 시 템플릿 자동 대체</div>
+    </section>
+
+    <section class="panel">
+      <div class="ph"><span class="no">07</span><span class="tt"><small>EVENT STREAM</small><b>이벤트·알림 기록</b></span><span class="right" id="evCount"></span></div>
+      <div class="events" id="events"></div>
+    </section>
+  </div>
+</main>
+<script src="/static/common.js"></script>
+<script src="/static/twin3d.js"></script>
+<script src="/static/dashboard.js"></script>
+</body>
+</html>
